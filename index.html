@@ -1,0 +1,574 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Orbit — Plan less. Finish more.</title>
+<meta name="description" content="Orbit turns your tasks, calendar and focus time into one calm daily plan.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  /* ============ Design tokens (edit these to rebrand) ============ */
+  :root {
+    --bg: #fbfaf7;
+    --bg-alt: #f3f1eb;
+    --surface: #ffffff;
+    --text: #1a1a1f;
+    --muted: #5d5d68;
+    --border: #e4e1d8;
+    --accent: #4f46e5;
+    --accent-hover: #4338ca;
+    --accent-soft: #eceafe;
+    --accent-text: #ffffff;
+    --good: #16a34a;
+    --warm: #f59e0b;
+    --shadow: 0 1px 2px rgba(20,20,30,.04), 0 12px 40px -12px rgba(20,20,30,.18);
+    --radius: 14px;
+    --max: 1120px;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #0f0f13; --bg-alt: #16161c; --surface: #1c1c24; --text: #f2f1ee;
+      --muted: #a3a3ae; --border: #2c2c37; --accent: #8b85ff; --accent-hover: #a29dff;
+      --accent-soft: #24233d; --accent-text: #0f0f13; --good: #4ade80; --warm: #fbbf24;
+      --shadow: 0 1px 2px rgba(0,0,0,.3), 0 16px 48px -16px rgba(0,0,0,.6);
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #0f0f13; --bg-alt: #16161c; --surface: #1c1c24; --text: #f2f1ee;
+    --muted: #a3a3ae; --border: #2c2c37; --accent: #8b85ff; --accent-hover: #a29dff;
+    --accent-soft: #24233d; --accent-text: #0f0f13; --good: #4ade80; --warm: #fbbf24;
+    --shadow: 0 1px 2px rgba(0,0,0,.3), 0 16px 48px -16px rgba(0,0,0,.6);
+  }
+
+  /* ============ Base ============ */
+  *, *::before, *::after { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0; background: var(--bg); color: var(--text);
+    font: 16px/1.6 Inter, system-ui, -apple-system, "Segoe UI", sans-serif;
+    -webkit-font-smoothing: antialiased; overflow-x: hidden;
+  }
+  a { color: inherit; }
+  h1, h2, h3 { line-height: 1.15; letter-spacing: -0.02em; margin: 0; }
+  p { margin: 0; }
+  .wrap { max-width: var(--max); margin: 0 auto; padding: 0 16px; }
+  @media (min-width: 640px) { .wrap { padding: 0 24px; } }
+  section { padding: 88px 0; }
+  .eyebrow { color: var(--accent); font-weight: 600; font-size: 14px; letter-spacing: .04em; text-transform: uppercase; }
+  .section-head { max-width: 640px; margin: 0 auto 48px; text-align: center; }
+  .section-head h2 { font-size: clamp(28px, 4vw, 40px); margin: 10px 0 14px; }
+  .section-head p { color: var(--muted); font-size: 18px; }
+
+  .btn {
+    display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+    padding: 12px 20px; border-radius: 10px; font: inherit; font-weight: 600;
+    text-decoration: none; border: 1px solid transparent; cursor: pointer;
+    transition: background .15s, transform .15s, border-color .15s;
+  }
+  .btn:active { transform: translateY(1px); }
+  .btn-primary { background: var(--accent); color: var(--accent-text); }
+  .btn-primary:hover { background: var(--accent-hover); }
+  .btn-ghost { background: transparent; border-color: var(--border); color: var(--text); }
+  .btn-ghost:hover { border-color: var(--muted); }
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+  /* ============ Nav ============ */
+  header.nav {
+    position: sticky; top: 0; z-index: 10;
+    background: color-mix(in srgb, var(--bg) 82%, transparent);
+    backdrop-filter: saturate(160%) blur(12px); -webkit-backdrop-filter: saturate(160%) blur(12px);
+    border-bottom: 1px solid transparent; transition: border-color .2s;
+  }
+  header.nav.scrolled { border-bottom-color: var(--border); }
+  .nav-inner { display: flex; align-items: center; justify-content: space-between; height: 64px; }
+  .logo { display: flex; align-items: center; gap: 10px; font-weight: 800; font-size: 19px; text-decoration: none; }
+  .logo-mark { width: 28px; height: 28px; }
+  .nav-links { display: none; gap: 28px; }
+  .nav-links a { text-decoration: none; color: var(--muted); font-weight: 500; font-size: 15px; }
+  .nav-links a:hover { color: var(--text); }
+  .nav-cta { display: flex; gap: 10px; align-items: center; }
+  .nav-cta .btn { padding: 9px 16px; font-size: 15px; }
+  .nav-cta .signin { display: none; }
+  @media (min-width: 820px) { .nav-links, .nav-cta .signin { display: flex; } }
+
+  /* ============ Hero ============ */
+  .hero { padding: 72px 0 40px; text-align: center; position: relative; }
+  .hero::before {
+    content: ""; position: absolute; inset: -120px 0 auto; height: 520px; z-index: -1;
+    background: radial-gradient(60% 60% at 50% 30%, var(--accent-soft), transparent 70%);
+  }
+  .pill {
+    display: inline-flex; align-items: center; gap: 8px; padding: 6px 14px 6px 6px;
+    border: 1px solid var(--border); border-radius: 999px; background: var(--surface);
+    font-size: 14px; color: var(--muted); text-decoration: none;
+  }
+  .pill b { background: var(--accent-soft); color: var(--accent); padding: 2px 10px; border-radius: 999px; font-weight: 600; }
+  .hero h1 { font-size: clamp(38px, 7vw, 68px); font-weight: 800; margin: 24px auto 20px; max-width: 14ch; }
+  .hero h1 em { font-style: normal; color: var(--accent); }
+  .hero .lede { font-size: clamp(17px, 2.2vw, 20px); color: var(--muted); max-width: 580px; margin: 0 auto 32px; }
+  .hero-actions { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+  .hero-note { margin-top: 16px; color: var(--muted); font-size: 14px; }
+
+  /* ============ App mockup ============ */
+  .mock {
+    margin: 56px auto 0; max-width: 960px; text-align: left;
+    background: var(--surface); border: 1px solid var(--border); border-radius: 18px;
+    box-shadow: var(--shadow); overflow: hidden;
+  }
+  .mock-bar { display: flex; gap: 6px; padding: 12px 14px; border-bottom: 1px solid var(--border); background: var(--bg-alt); }
+  .mock-bar i { width: 11px; height: 11px; border-radius: 50%; background: var(--border); }
+  .mock-body { display: grid; grid-template-columns: 1fr; }
+  @media (min-width: 760px) { .mock-body { grid-template-columns: 190px 1fr 260px; } }
+  .mock-side { display: none; padding: 18px 14px; border-right: 1px solid var(--border); font-size: 14px; }
+  @media (min-width: 760px) { .mock-side { display: block; } }
+  .mock-side div { padding: 7px 10px; border-radius: 8px; color: var(--muted); display: flex; justify-content: space-between; }
+  .mock-side div.on { background: var(--accent-soft); color: var(--accent); font-weight: 600; }
+  .mock-side small { opacity: .7; }
+  .mock-main { padding: 22px; }
+  .mock-main h3 { font-size: 18px; margin-bottom: 4px; }
+  .mock-main .sub { color: var(--muted); font-size: 14px; margin-bottom: 16px; }
+  .task {
+    display: flex; align-items: center; gap: 12px; padding: 11px 12px;
+    border: 1px solid var(--border); border-radius: 10px; margin-bottom: 8px;
+    font-size: 15px; cursor: pointer; user-select: none; transition: background .15s;
+  }
+  .task:hover { background: var(--bg-alt); }
+  .task .box {
+    width: 20px; height: 20px; flex: none; border-radius: 6px; border: 2px solid var(--border);
+    display: grid; place-items: center; transition: all .15s;
+  }
+  .task .box svg { width: 12px; height: 12px; opacity: 0; }
+  .task.done .box { background: var(--good); border-color: var(--good); }
+  .task.done .box svg { opacity: 1; }
+  .task.done .label { text-decoration: line-through; color: var(--muted); }
+  .task .label { flex: 1; min-width: 0; }
+  .tag { font-size: 12px; padding: 2px 8px; border-radius: 999px; background: var(--bg-alt); color: var(--muted); white-space: nowrap; }
+  .tag.hot { background: color-mix(in srgb, var(--warm) 18%, transparent); color: var(--warm); }
+  .progress { height: 6px; background: var(--bg-alt); border-radius: 999px; margin: 14px 0 4px; overflow: hidden; }
+  .progress span { display: block; height: 100%; background: var(--accent); border-radius: 999px; transition: width .3s; }
+  .progress-label { font-size: 13px; color: var(--muted); }
+  .mock-focus { padding: 22px; border-top: 1px solid var(--border); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; }
+  @media (min-width: 760px) { .mock-focus { border-top: 0; border-left: 1px solid var(--border); } }
+  .ring { position: relative; width: 150px; height: 150px; }
+  .ring svg { transform: rotate(-90deg); }
+  .ring .time { position: absolute; inset: 0; display: grid; place-items: center; font-size: 30px; font-weight: 700; font-variant-numeric: tabular-nums; }
+  .mock-focus .label { font-size: 13px; color: var(--muted); text-align: center; }
+
+  /* ============ Features ============ */
+  .features { background: var(--bg-alt); }
+  .grid-3 { display: grid; gap: 20px; grid-template-columns: 1fr; }
+  @media (min-width: 700px) { .grid-3 { grid-template-columns: repeat(2, 1fr); } }
+  @media (min-width: 980px) { .grid-3 { grid-template-columns: repeat(3, 1fr); } }
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 28px; }
+  .icon { width: 44px; height: 44px; border-radius: 11px; background: var(--accent-soft); color: var(--accent); display: grid; place-items: center; margin-bottom: 18px; }
+  .icon svg { width: 22px; height: 22px; }
+  .card h3 { font-size: 19px; margin-bottom: 8px; }
+  .card p { color: var(--muted); }
+
+  /* ============ Steps ============ */
+  .steps { display: grid; gap: 32px; grid-template-columns: 1fr; counter-reset: step; }
+  @media (min-width: 820px) { .steps { grid-template-columns: repeat(3, 1fr); } }
+  .step { position: relative; padding-top: 56px; }
+  .step::before {
+    counter-increment: step; content: counter(step);
+    position: absolute; top: 0; left: 0; width: 40px; height: 40px; border-radius: 50%;
+    background: var(--accent); color: var(--accent-text); display: grid; place-items: center; font-weight: 700;
+  }
+  .step h3 { font-size: 20px; margin-bottom: 8px; }
+  .step p { color: var(--muted); }
+
+  /* ============ Stats ============ */
+  .stats { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1px; background: var(--border); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; margin-top: 64px; }
+  @media (min-width: 820px) { .stats { grid-template-columns: repeat(4, 1fr); } }
+  .stat { background: var(--surface); padding: 28px 20px; text-align: center; }
+  .stat strong { display: block; font-size: clamp(28px, 4vw, 36px); font-weight: 800; letter-spacing: -0.02em; }
+  .stat span { color: var(--muted); font-size: 14px; }
+
+  /* ============ Pricing ============ */
+  .toggle { display: inline-flex; padding: 4px; border: 1px solid var(--border); border-radius: 999px; background: var(--surface); margin-top: 20px; }
+  .toggle button { font: inherit; font-size: 14px; font-weight: 600; border: 0; background: none; color: var(--muted); padding: 8px 16px; border-radius: 999px; cursor: pointer; }
+  .toggle button[aria-pressed="true"] { background: var(--accent); color: var(--accent-text); }
+  .toggle small { color: var(--good); font-weight: 700; }
+  .toggle button[aria-pressed="true"] small { color: inherit; }
+  .plans { display: grid; gap: 20px; grid-template-columns: 1fr; max-width: 1000px; margin: 0 auto; }
+  @media (min-width: 900px) { .plans { grid-template-columns: repeat(3, 1fr); align-items: start; } }
+  .plan { display: flex; flex-direction: column; gap: 20px; }
+  .plan.featured { border: 2px solid var(--accent); box-shadow: var(--shadow); position: relative; }
+  .plan.featured::before { content: "Most popular"; position: absolute; top: -13px; left: 24px; background: var(--accent); color: var(--accent-text); font-size: 12px; font-weight: 700; padding: 4px 12px; border-radius: 999px; }
+  .plan h3 { font-size: 18px; }
+  .plan .desc { color: var(--muted); font-size: 15px; margin-top: 4px; }
+  .price { font-size: 44px; font-weight: 800; letter-spacing: -0.03em; }
+  .price small { font-size: 15px; font-weight: 500; color: var(--muted); letter-spacing: 0; }
+  .plan ul { list-style: none; padding: 0; margin: 0; display: grid; gap: 10px; font-size: 15px; }
+  .plan li { display: flex; gap: 10px; align-items: flex-start; }
+  .plan li svg { flex: none; width: 18px; height: 18px; color: var(--good); margin-top: 3px; }
+
+  /* ============ FAQ ============ */
+  .faq { max-width: 760px; margin: 0 auto; }
+  details { border-bottom: 1px solid var(--border); padding: 20px 0; }
+  details:first-of-type { border-top: 1px solid var(--border); }
+  summary { cursor: pointer; font-weight: 600; font-size: 17px; list-style: none; display: flex; justify-content: space-between; gap: 16px; }
+  summary::-webkit-details-marker { display: none; }
+  summary::after { content: "+"; font-size: 22px; line-height: 1; color: var(--muted); transition: transform .2s; }
+  details[open] summary::after { transform: rotate(45deg); }
+  details p { color: var(--muted); margin-top: 12px; }
+
+  /* ============ CTA ============ */
+  .cta-box {
+    background: var(--accent); color: var(--accent-text); border-radius: 22px;
+    padding: clamp(40px, 6vw, 72px) clamp(20px, 5vw, 64px); text-align: center; position: relative; overflow: hidden;
+  }
+  .cta-box::after { content: ""; position: absolute; width: 420px; height: 420px; border-radius: 50%; border: 60px solid rgba(255,255,255,.08); right: -140px; top: -180px; }
+  .cta-box h2 { font-size: clamp(28px, 4.5vw, 44px); margin-bottom: 14px; position: relative; z-index: 1; }
+  .cta-box p { opacity: .85; font-size: 18px; margin-bottom: 28px; position: relative; z-index: 1; }
+  .signup { display: flex; gap: 10px; max-width: 460px; margin: 0 auto; flex-wrap: wrap; position: relative; z-index: 1; }
+  .signup input {
+    flex: 1 1 220px; min-width: 0; padding: 13px 16px; border-radius: 10px; font: inherit;
+    border: 1px solid rgba(255,255,255,.35); background: rgba(255,255,255,.14); color: inherit;
+  }
+  .signup input::placeholder { color: inherit; opacity: .7; }
+  .signup input:focus { outline: 2px solid currentColor; outline-offset: 1px; }
+  .signup .btn { flex: 1 1 auto; background: var(--accent-text); color: var(--accent); }
+  .signup-msg { margin-top: 14px; min-height: 1.6em; font-size: 15px; position: relative; z-index: 1; }
+
+  /* ============ Footer ============ */
+  footer { padding: 48px 0; border-top: 1px solid var(--border); color: var(--muted); font-size: 14px; }
+  .foot { display: flex; flex-wrap: wrap; gap: 20px; justify-content: space-between; align-items: center; }
+  .foot nav { display: flex; gap: 20px; flex-wrap: wrap; }
+  .foot a { text-decoration: none; }
+  .foot a:hover { color: var(--text); }
+  .theme-btn { background: none; border: 1px solid var(--border); color: var(--muted); border-radius: 8px; padding: 6px 10px; font: inherit; cursor: pointer; }
+
+  /* ============ Reveal on scroll ============ */
+  .reveal { opacity: 0; transform: translateY(16px); transition: opacity .6s ease, transform .6s ease; }
+  .reveal.in { opacity: 1; transform: none; }
+  @media (prefers-reduced-motion: reduce) {
+    html { scroll-behavior: auto; }
+    .reveal { opacity: 1; transform: none; transition: none; }
+  }
+</style>
+</head>
+<body>
+
+<header class="nav" id="nav">
+  <div class="wrap nav-inner">
+    <a href="#" class="logo" aria-label="Orbit home">
+      <svg class="logo-mark" viewBox="0 0 32 32" fill="none" aria-hidden="true">
+        <circle cx="16" cy="16" r="6" fill="var(--accent)"/>
+        <ellipse cx="16" cy="16" rx="14" ry="6" stroke="var(--accent)" stroke-width="2.2" transform="rotate(-30 16 16)"/>
+      </svg>
+      Orbit
+    </a>
+    <nav class="nav-links" aria-label="Primary">
+      <a href="#features">Features</a>
+      <a href="#how">How it works</a>
+      <a href="#pricing">Pricing</a>
+      <a href="#faq">FAQ</a>
+    </nav>
+    <div class="nav-cta">
+      <a href="#" class="btn btn-ghost signin">Sign in</a>
+      <a href="#get-started" class="btn btn-primary">Get started</a>
+    </div>
+  </div>
+</header>
+
+<main>
+  <!-- Hero -->
+  <section class="hero">
+    <div class="wrap">
+      <a href="#features" class="pill"><b>New</b> Auto-scheduling is here →</a>
+      <h1>Plan less. <em>Finish more.</em></h1>
+      <p class="lede">Orbit pulls your tasks, calendar and focus time into one calm daily plan, so you spend your energy doing the work instead of organizing it.</p>
+      <div class="hero-actions">
+        <a href="#get-started" class="btn btn-primary">Start free</a>
+        <a href="#how" class="btn btn-ghost">See how it works</a>
+      </div>
+      <p class="hero-note">Free forever for personal use · No credit card required</p>
+
+      <div class="mock reveal" aria-label="Orbit app preview">
+        <div class="mock-bar"><i></i><i></i><i></i></div>
+        <div class="mock-body">
+          <div class="mock-side">
+            <div class="on">Today <small>5</small></div>
+            <div>Upcoming <small>12</small></div>
+            <div>Projects</div>
+            <div>Focus log</div>
+            <div>Archive</div>
+          </div>
+          <div class="mock-main">
+            <h3>Good morning 👋</h3>
+            <p class="sub">Your day is planned. Try checking a task off.</p>
+            <div id="tasks">
+              <div class="task done" role="checkbox" aria-checked="true" tabindex="0"><span class="box"><svg viewBox="0 0 12 12" fill="none" stroke="#fff" stroke-width="2.2"><path d="M2 6.5l2.5 2.5L10 3.5"/></svg></span><span class="label">Review weekly goals</span><span class="tag">9:00</span></div>
+              <div class="task" role="checkbox" aria-checked="false" tabindex="0"><span class="box"><svg viewBox="0 0 12 12" fill="none" stroke="#fff" stroke-width="2.2"><path d="M2 6.5l2.5 2.5L10 3.5"/></svg></span><span class="label">Draft Q4 product brief</span><span class="tag hot">Deep work</span></div>
+              <div class="task" role="checkbox" aria-checked="false" tabindex="0"><span class="box"><svg viewBox="0 0 12 12" fill="none" stroke="#fff" stroke-width="2.2"><path d="M2 6.5l2.5 2.5L10 3.5"/></svg></span><span class="label">Reply to design feedback</span><span class="tag">15 min</span></div>
+              <div class="task" role="checkbox" aria-checked="false" tabindex="0"><span class="box"><svg viewBox="0 0 12 12" fill="none" stroke="#fff" stroke-width="2.2"><path d="M2 6.5l2.5 2.5L10 3.5"/></svg></span><span class="label">1:1 with Sam</span><span class="tag">14:00</span></div>
+              <div class="task" role="checkbox" aria-checked="false" tabindex="0"><span class="box"><svg viewBox="0 0 12 12" fill="none" stroke="#fff" stroke-width="2.2"><path d="M2 6.5l2.5 2.5L10 3.5"/></svg></span><span class="label">Plan tomorrow</span><span class="tag">17:30</span></div>
+            </div>
+            <div class="progress"><span id="bar" style="width:20%"></span></div>
+            <div class="progress-label" id="barLabel">1 of 5 done</div>
+          </div>
+          <div class="mock-focus">
+            <div class="ring">
+              <svg width="150" height="150" viewBox="0 0 150 150" aria-hidden="true">
+                <circle cx="75" cy="75" r="64" fill="none" stroke="var(--bg-alt)" stroke-width="10"/>
+                <circle id="ringArc" cx="75" cy="75" r="64" fill="none" stroke="var(--accent)" stroke-width="10" stroke-linecap="round" stroke-dasharray="402.1" stroke-dashoffset="0"/>
+              </svg>
+              <div class="time" id="timer">25:00</div>
+            </div>
+            <div class="label">Focus session<br>Draft Q4 product brief</div>
+            <button class="btn btn-ghost" id="focusBtn" style="padding:8px 18px;font-size:14px">Start focus</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Features -->
+  <section class="features" id="features">
+    <div class="wrap">
+      <div class="section-head reveal">
+        <span class="eyebrow">Features</span>
+        <h2>Everything you need to own your day</h2>
+        <p>No sprawling setup. Orbit works the moment you add your first task.</p>
+      </div>
+      <div class="grid-3">
+        <div class="card reveal">
+          <div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M3 9h18M8 2v4M16 2v4M8 14h3"/></svg></div>
+          <h3>Auto-scheduling</h3>
+          <p>Orbit fits tasks into the open gaps in your calendar and reshuffles them when plans change.</p>
+        </div>
+        <div class="card reveal">
+          <div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2 2M9 2h6"/></svg></div>
+          <h3>Focus sessions</h3>
+          <p>Built-in timers block distractions and log your deep-work hours automatically.</p>
+        </div>
+        <div class="card reveal">
+          <div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16M4 12h10M4 18h6"/><path d="M17 15l2 2 3-4"/></svg></div>
+          <h3>Smart priorities</h3>
+          <p>Deadlines, effort and energy levels combine into a single ranked list of what matters now.</p>
+        </div>
+        <div class="card reveal">
+          <div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h6v6H4zM14 4h6v6h-6zM4 14h6v6H4z"/><path d="M17 14v6M14 17h6"/></svg></div>
+          <h3>Integrations</h3>
+          <p>Connect your calendar, email and issue tracker so every to-do lands in one place.</p>
+        </div>
+        <div class="card reveal">
+          <div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 20V10M9 20V4M15 20v-7M21 20v-11"/></svg></div>
+          <h3>Weekly insights</h3>
+          <p>See where your time actually went and get gentle nudges to protect what you care about.</p>
+        </div>
+        <div class="card reveal">
+          <div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="2" width="14" height="20" rx="3"/><path d="M11 18h2"/></svg></div>
+          <h3>Everywhere you work</h3>
+          <p>Fast native apps for desktop and mobile, synced instantly and usable offline.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- How it works -->
+  <section id="how">
+    <div class="wrap">
+      <div class="section-head reveal">
+        <span class="eyebrow">How it works</span>
+        <h2>From scattered to sorted in minutes</h2>
+      </div>
+      <div class="steps">
+        <div class="step reveal">
+          <h3>Capture everything</h3>
+          <p>Dump tasks in with a quick-add shortcut, or let integrations pull them in for you.</p>
+        </div>
+        <div class="step reveal">
+          <h3>Get your plan</h3>
+          <p>Orbit builds a realistic schedule around your meetings, deadlines and energy.</p>
+        </div>
+        <div class="step reveal">
+          <h3>Focus and finish</h3>
+          <p>Work through one thing at a time. Orbit adapts when the day doesn't go to plan.</p>
+        </div>
+      </div>
+      <!-- Placeholder figures: replace with your real metrics -->
+      <div class="stats reveal">
+        <div class="stat"><strong>5 min</strong><span>to set up</span></div>
+        <div class="stat"><strong>1 list</strong><span>for every task</span></div>
+        <div class="stat"><strong>3</strong><span>platforms</span></div>
+        <div class="stat"><strong>0</strong><span>ads, ever</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Pricing -->
+  <section id="pricing" style="background:var(--bg-alt)">
+    <div class="wrap">
+      <div class="section-head reveal">
+        <span class="eyebrow">Pricing</span>
+        <h2>Simple plans that grow with you</h2>
+        <p>Start free. Upgrade when you're ready.</p>
+        <div class="toggle" role="group" aria-label="Billing period">
+          <button type="button" data-period="monthly" aria-pressed="true">Monthly</button>
+          <button type="button" data-period="yearly" aria-pressed="false">Yearly <small>−20%</small></button>
+        </div>
+      </div>
+      <div class="plans">
+        <div class="card plan reveal">
+          <div><h3>Free</h3><p class="desc">For getting your own life in order.</p></div>
+          <div class="price" data-monthly="0" data-yearly="0">$0<small> / month</small></div>
+          <a href="#get-started" class="btn btn-ghost">Start free</a>
+          <ul>
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12l5 5L20 7"/></svg>Unlimited tasks</li>
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12l5 5L20 7"/></svg>Focus timer</li>
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12l5 5L20 7"/></svg>1 calendar connection</li>
+          </ul>
+        </div>
+        <div class="card plan featured reveal">
+          <div><h3>Pro</h3><p class="desc">For people who live in their calendar.</p></div>
+          <div class="price" data-monthly="10" data-yearly="8">$10<small> / month</small></div>
+          <a href="#get-started" class="btn btn-primary">Try Pro free for 14 days</a>
+          <ul>
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12l5 5L20 7"/></svg>Everything in Free</li>
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12l5 5L20 7"/></svg>Auto-scheduling</li>
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12l5 5L20 7"/></svg>Unlimited integrations</li>
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12l5 5L20 7"/></svg>Weekly insights</li>
+          </ul>
+        </div>
+        <div class="card plan reveal">
+          <div><h3>Team</h3><p class="desc">For teams who plan together.</p></div>
+          <div class="price" data-monthly="18" data-yearly="14">$18<small> / user / month</small></div>
+          <a href="#get-started" class="btn btn-ghost">Contact sales</a>
+          <ul>
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12l5 5L20 7"/></svg>Everything in Pro</li>
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12l5 5L20 7"/></svg>Shared projects</li>
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12l5 5L20 7"/></svg>Team availability view</li>
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12l5 5L20 7"/></svg>SSO & admin controls</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FAQ -->
+  <section id="faq">
+    <div class="wrap">
+      <div class="section-head reveal">
+        <span class="eyebrow">FAQ</span>
+        <h2>Questions, answered</h2>
+      </div>
+      <div class="faq reveal">
+        <details><summary>Is Orbit really free?</summary><p>Yes. The Free plan has no time limit and covers everything most individuals need. Pro adds auto-scheduling and unlimited integrations.</p></details>
+        <details><summary>Which calendars does Orbit work with?</summary><p>Orbit connects to the major calendar providers and any calendar that supports standard CalDAV or ICS feeds.</p></details>
+        <details><summary>Can I import tasks from another app?</summary><p>You can import from CSV or connect your existing tools directly, and your tasks arrive with due dates and labels intact.</p></details>
+        <details><summary>Is my data private?</summary><p>Your data is encrypted in transit and at rest. We never sell it and never show ads.</p></details>
+        <details><summary>Can I cancel anytime?</summary><p>Of course. Downgrade or cancel from settings in two clicks; you keep all your data on the Free plan.</p></details>
+      </div>
+    </div>
+  </section>
+
+  <!-- Final CTA -->
+  <section id="get-started" style="padding-top:0">
+    <div class="wrap">
+      <div class="cta-box reveal">
+        <h2>Your calmest week starts now</h2>
+        <p>Join the waitlist and get early access to Orbit Pro.</p>
+        <form class="signup" id="signup" novalidate>
+          <label for="email" class="sr-only" style="position:absolute;left:-9999px">Email address</label>
+          <input id="email" type="email" placeholder="you@work.com" autocomplete="email" required>
+          <button class="btn" type="submit">Get early access</button>
+        </form>
+        <p class="signup-msg" id="signupMsg" role="status" aria-live="polite"></p>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap foot">
+    <span>© <span id="year"></span> Orbit. All rights reserved.</span>
+    <nav aria-label="Footer">
+      <a href="#">Privacy</a>
+      <a href="#">Terms</a>
+      <a href="#">Contact</a>
+      <button class="theme-btn" id="themeBtn" type="button">Toggle theme</button>
+    </nav>
+  </div>
+</footer>
+
+<script>
+  // Sticky nav border
+  const nav = document.getElementById('nav');
+  addEventListener('scroll', () => nav.classList.toggle('scrolled', scrollY > 8), { passive: true });
+
+  // Reveal on scroll
+  const io = new IntersectionObserver(entries => {
+    entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); } });
+  }, { threshold: 0.12 });
+  document.querySelectorAll('.reveal').forEach(el => io.observe(el));
+
+  // Interactive task list in the mockup
+  const tasks = [...document.querySelectorAll('#tasks .task')];
+  const bar = document.getElementById('bar'), barLabel = document.getElementById('barLabel');
+  function updateProgress() {
+    const done = tasks.filter(t => t.classList.contains('done')).length;
+    bar.style.width = (done / tasks.length * 100) + '%';
+    barLabel.textContent = done === tasks.length ? 'All done. Enjoy your evening 🎉' : `${done} of ${tasks.length} done`;
+  }
+  tasks.forEach(t => {
+    const toggle = () => { const on = t.classList.toggle('done'); t.setAttribute('aria-checked', on); updateProgress(); };
+    t.addEventListener('click', toggle);
+    t.addEventListener('keydown', e => { if (e.key === ' ' || e.key === 'Enter') { e.preventDefault(); toggle(); } });
+  });
+
+  // Focus timer demo (runs fast so visitors see it move)
+  const timerEl = document.getElementById('timer'), arc = document.getElementById('ringArc'), focusBtn = document.getElementById('focusBtn');
+  const TOTAL = 25 * 60, CIRC = 402.1;
+  let left = TOTAL, tick = null;
+  function render() {
+    const m = String(Math.floor(left / 60)).padStart(2, '0'), s = String(left % 60).padStart(2, '0');
+    timerEl.textContent = `${m}:${s}`;
+    arc.style.strokeDashoffset = CIRC * (1 - left / TOTAL);
+  }
+  focusBtn.addEventListener('click', () => {
+    if (tick) { clearInterval(tick); tick = null; focusBtn.textContent = 'Resume'; return; }
+    if (left === 0) left = TOTAL;
+    focusBtn.textContent = 'Pause';
+    tick = setInterval(() => {
+      left = Math.max(0, left - 15);
+      render();
+      if (left === 0) { clearInterval(tick); tick = null; focusBtn.textContent = 'Start again'; }
+    }, 100);
+  });
+
+  // Pricing toggle
+  document.querySelectorAll('.toggle button').forEach(btn => btn.addEventListener('click', () => {
+    const period = btn.dataset.period;
+    document.querySelectorAll('.toggle button').forEach(b => b.setAttribute('aria-pressed', b === btn));
+    document.querySelectorAll('.price').forEach(p => {
+      const suffix = p.querySelector('small').outerHTML;
+      p.innerHTML = '$' + p.dataset[period] + suffix;
+    });
+  }));
+
+  // Signup form (front-end only; wire to your backend or email provider)
+  document.getElementById('signup').addEventListener('submit', e => {
+    e.preventDefault();
+    const input = document.getElementById('email'), msg = document.getElementById('signupMsg');
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(input.value.trim())) { msg.textContent = 'Please enter a valid email address.'; input.focus(); return; }
+    msg.textContent = "You're on the list! We'll be in touch soon.";
+    input.value = '';
+  });
+
+  // Theme toggle
+  document.getElementById('themeBtn').addEventListener('click', () => {
+    const root = document.documentElement;
+    const isDark = root.dataset.theme ? root.dataset.theme === 'dark' : matchMedia('(prefers-color-scheme: dark)').matches;
+    root.dataset.theme = isDark ? 'light' : 'dark';
+    try { localStorage.setItem('theme', root.dataset.theme); } catch (_) {}
+  });
+  try { const t = localStorage.getItem('theme'); if (t) document.documentElement.dataset.theme = t; } catch (_) {}
+
+  document.getElementById('year').textContent = new Date().getFullYear();
+</script>
+</body>
+</html>
